@@ -1,87 +1,48 @@
 #include "monty.h"
-#include <string.h>
-#include <stdlib.h>
+/*global struct*/
+/*monty_details mon;*/
+#define AGSIZE 10
 /**
- * main - monty interperter
- * @ac: the number of arguments
- * @av: the arguments
- * Return: void
+ *main - main file of the monty interpreter
+ *@argc:arguement count
+ *@argv:arguement vector
+ *Return: 0
  */
-int main(int ac, char *av[])
+int main(int argc, char *argv[])
 {
-	stack_t *stack = NULL;
-	static char *string[1000] = {NULL};
-	int n = 0;
-	FILE *fd;
-	size_t bufsize = 1000;
-
-	if (ac != 2)
+	/*initialization of mon variables*/
+	mon.line_number = 1;
+	mon.stack_queue = 1;
+	mon.file = NULL;
+	mon.args = malloc(sizeof(char *) * AGSIZE);
+	if (!mon.args)
 	{
-		fprintf(stderr, "USAGE: monty file\n");
+		dprintf(STDERR_FILENO, "Error: malloc failed\n");
+		freer();
 		exit(EXIT_FAILURE);
 	}
-	fd = fopen(av[1], "r");
-	if (fd == NULL)
+	/*arguement count should be 2*/
+	if (argc != 2)
 	{
-		fprintf(stderr, "Error: Can't open file %s\n", av[1]);
+		dprintf(STDERR_FILENO, "USAGE: monty file\n");
+		freer();
 		exit(EXIT_FAILURE);
 	}
-
-	
-	for (n = 0; getline(&(string[n]), &bufsize, fd) > 0; n++)
-		;
-	execute(string, stack);
-	free_list(string);
-	fclose(fd);
-	return (0);
-}
-
-/**
- * execute - executes opcodes
- * @string: contents of file
- * @stack: the list
- * Return: void
- */
-
-void execute(char *string[], stack_t *stack)
-{
-	int ln, n, i;
-
-	instruction_t st[] = {
-		{"pall", pall},
-		{"pint", pint},
-		{"add", add},
-		{"swap", swap},
-		{"pop", pop},
-		{"null", NULL}
-	};
-
-	for (ln = 1, n = 0; string[n + 1]; n++, ln++)
+	/*check whether file is accessible*/
+	if (access(argv[1], R_OK) == -1)
 	{
-		if (_strcmp("push", string[n]))
-			push(&stack, ln, pushint(string[n], ln));
-		else if (_strcmp("nop", string[n]))
-			;
-		else
-		{
-			i = 0;
-			while (!_strcmp(st[i].opcode, "null"))
-			{
-				if (_strcmp(st[i].opcode, string[n]))
-				{
-					st[i].f(&stack, ln);
-					break;
-				}
-				i++;
-			}
-			if (_strcmp(st[i].opcode, "null") && !_strcmp(string[n], "\n"))
-			{
-				fprintf(stderr, "L%u: unknown instruction %s", ln, string[n]);
-				if (!nlfind(string[n]))
-					fprintf(stderr, "\n");
-				exit(EXIT_FAILURE);
-			}
-		}
+		dprintf(STDERR_FILENO, "Error: Can't open file %s\n", argv[1]);
+		freer();
+		exit(EXIT_FAILURE);
 	}
-	free_stack(stack);
+	mon.file = fopen(argv[1], "r");
+	if (!mon.file)
+	{
+		dprintf(STDERR_FILENO, "Error: malloc failed\n");
+		freer();
+		exit(EXIT_FAILURE);
+	}
+	parse();
+	freer();
+	return (EXIT_SUCCESS);
 }
